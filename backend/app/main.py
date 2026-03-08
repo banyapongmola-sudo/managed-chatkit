@@ -8,7 +8,7 @@ import uuid
 from typing import Any, Mapping
 
 import httpx
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, UploadFile, File, Form, Optional
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -92,6 +92,31 @@ async def create_session(request: Request) -> JSONResponse:
         cookie_value,
     )
 
+@app.post("/api/chat")
+async def chat_with_assistant(
+    text: str = Form(...), 
+    file: Optional[UploadFile] = File(None)
+):
+    # 1. จัดการข้อความ (Text/Speech ที่แปลงมาแล้ว)
+    print(f"ได้รับข้อความ: {text}")
+
+    # 2. จัดการไฟล์ (ถ้ามีการแนบมา)
+    file_info = None
+    if file:
+        # อ่านเนื้อหาไฟล์ (ตัวอย่าง: เก็บขนาดหรือชื่อไฟล์ไว้)
+        content = await file.read()
+        file_info = {"filename": file.filename, "size": len(content)}
+        print(f"ได้รับไฟล์: {file.filename}")
+        
+        # TODO: ถ้าต้องการส่งไฟล์ไป OpenAI หรือบันทึกลงเครื่อง ให้ทำที่นี่
+
+    # 3. ส่งข้อมูลกลับไปยัง Frontend
+    return {
+        "status": "success",
+        "user_message": text,
+        "file_received": file_info,
+        "reply": f"ระบบได้รับข้อความ '{text}' เรียบร้อยแล้ว"
+    }
 
 def respond(
     payload: Mapping[str, Any], status_code: int, cookie_value: str | None = None
